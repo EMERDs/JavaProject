@@ -1,3 +1,7 @@
-cd - change directory
+cd - change directory.
 
 ls - list of files/dirs in currect directory.
+
+pwd - present working directory.
+
+rm - to remove files/folder.
