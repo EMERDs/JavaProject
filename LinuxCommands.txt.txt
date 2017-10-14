@@ -5,3 +5,5 @@ ls - list of files/dirs in currect directory.
 pwd - present working directory.
 
 rm - to remove files/folder.
+
+mkdir - creating new directory.
