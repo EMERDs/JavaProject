@@ -1,0 +1,23 @@
+DevOps - Development Operations
+
+Java Dev Team
+    |
+	|Check-in the code
+	|
+Code placed in any code repo SVN, GitHub
+	|
+	|Build Request
+	|
+Compile the code and package (i.e., build process using ANT, Maven, Gradle etc)  --> Automation tool --> Jenkins, TeamCity etc
+	|
+	|Deployment Request
+	|
+Install the package on Environment i.e, dev-int, system, perfromance on any application server(TomCat, JBoss, WebLogic, WAS8.5) to run/test the project/code/application --> Automation tols: G3, ANSIGLE, PUPPET, CHEF, Docker etc...
+	|
+	|Test the code
+	|
+Testing team test the code
+	|
+	|rise the defect
+	|
+Defect fix by Java Dev Team (go to first stage)

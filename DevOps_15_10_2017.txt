@@ -1,0 +1,431 @@
+
+1. CI/CD tools: Jenkins and other similar popular tools TeamCity, Bamboo etc.
+
+2. Build Tools: Java: Ant, Maven, Gradle etc. || .net: NAnt, MS-Build etc.
+
+3. Version Control(i.e., code repository) tools: SVN, GitHub, RTC, TFS etc.
+
+4. Automation tools for DEPLOYMENT  (Configuration management) Tools: ANSIBLE, PUPPET, CHEF, DOCKER, URBAN Code Deployment etc.
+
+5. Application Servers: TomCat, JBoss, WAS8.5, WebLogic etc.
+
+6. Scripting: Python Script, Ruby, Shell Script, Groovy Script, Java Script, Java Programming language, Maven Plugin API etc.
+
+7. Remote repositories: artifactory, nexus etc.
+
+8. Code-qality Tools: SonarQuebe etc.
+
+9. Cloud Management portals: AWS, Azure, Cloud Foundry, Google Cloud Platform etc.
+
+10. Issue/Project management : JIRA, Confluence, Trac etc tools for issue management and documentation purpose.
+
+11. Monitoring tools: Grafana etc.
+
+--------------------------------------------------------------------------------------------------------------
+1. CI/CD tools: Jenkins and other popular tools TeamCity, Bamboo etc.
+--------------------------------------------------------------------------------------------------------------
+
+Jenkins:- Interview Questions
+--------
+1. What is Jenkins?
+2. What are the job templates you are using? How to create a new iteam?
+3. What is the difference between Maven and free-style job templates?
+4. Where to configure the code details? (under SCM section).
+5. Difference between Build Periodical & Poll SCM AND define each?
+6. How to configure Sonar in Jenkins job?
+7. Email notification? (Tow types, 1. email notification & Editable Email notification to send attachments).
+8. What is the fix for OutOfMemory issue. (increasase HEAP size, need to add maven Options).
+9. Environment varibales?
+10. How to install a plugin?
+11. Project based security.
+12. how to add user.
+13. How to install Jenkins. (minimum Java should be installed).
+14. Different types of Build errors? (3 types. 1-->Network or anyother issues which whould be fixed by ALM/LTS teams, 2-->Some errors which whould be fixed by Build Team, for example, job wrong congiguration, 3-->Some other errors which whould be fixed by Dev Team, for example, Compilation errros, test case failures etc.)
+15. What are the different types of jobs you are using. Build Flow, Multi-job, Maven, free-style, pipeline etc.
+16. Up-Stream, Down-Stream jobs?
+17. Parameterized job?
+18. Pipeline script for CD?
+19. What are the automations you have done? Using groovy script create/rename/delete/disable the Jenkins jobs?
+------------------------------------------------------------------------
+Pipeline Script:-
+-----------------
+
+---------
+Script-0: Hello World example
+---------
+node {
+   echo 'Hello World'
+}
+
+or 
+
+echo 'Hello World'
+
+---------
+Script-1: Parallel Execution
+---------
+   parallel (
+       'Branch-1' : {
+            echo "I'm from Branch-1"
+       },
+       'Branch-2' : {
+            echo "I'm from Branch-2"
+       },
+    )
+
+---------
+Script-2: Exception handling: try-catch
+---------
+   parallel (
+       'Branch-1' : {
+            try{
+                echo "I'm from Branch-1"
+            }catch(error){
+                throw error
+            }
+       },
+       'Branch-2' : {
+            try{
+                echo "I'm from Branch-2"
+            }catch(error){
+                throw error
+            }
+       }
+    )
+
+---------
+Script-3: Exception handling: try-catch-finally
+---------
+try{
+   parallel (
+       'Branch-1' : {
+            try{
+                echo "I'm from Branch-1"
+            }catch(error){
+                throw error
+            }
+       },
+       'Branch-2' : {
+            try{
+                echo "I'm from Branch-2"
+            }catch(error){
+                throw error
+            }
+       }
+    )
+}catch(error){
+    println(error)
+}finally{
+    echo "Execute this step if there is any error or NOT in above steps"
+}
+
+---------
+Script-4: Taking approval from console whether to proceed or abort the job.
+---------
+
+input ‘Retry the task or job…?’
+
+---------
+Script-5: Build a job
+---------
+
+build 'FREESTYLE-JOB-CI'
+
+---------
+Script-6: Build multiple jobs one by one
+---------
+
+build 'FREESTYLE-JOB-CI'
+
+build 'FREESTYLE-JOB-DEPLOY'
+
+---------
+Script-7: Build multiple jobs one by one: Retry the failed job.
+---------
+
+echo 'Triggering CI job first...'
+try{
+    build 'FREESTYLE-JOB-CI'
+}catch(error){
+    retry(3){
+        input 'job failed, please fix the build and retry...'
+        build 'FREESTYLE-JOB-CI'
+    }
+}
+echo 'Triggering Deploy job...'
+try{
+    build 'FREESTYLE-JOB-DEPLOY'
+}catch(error){
+    retry(3){
+        input 'job failed, please fix the build and retry...'
+        build 'FREESTYLE-JOB-DEPLOY'
+    }
+}
+
+---------
+Script-8: Parallel execution of Jenkins jobs
+---------
+
+try{
+	build 'FREESTYLE-JOB-CI'
+}catch(error){
+	retry(3){
+	input 'Build failed, please fix the error and retry...'
+	build 'FREESTYLE-JOB-CI'
+	}
+}
+parallel (
+       'SNAPSHOT' : {
+            try{
+                build 'FREESTYLE-JOB-SNAPSHOT'
+            }catch(error){
+                retry(3){
+				input 'Build failed, please fix the error and retry...'
+				build 'FREESTYLE-JOB-SNAPSHOT'
+				}
+            }
+       },
+       'DEPLOY' : {
+            try{
+                build 'FREESTYLE-JOB-DEPLOY'
+            }catch(error){
+				input 'Build failed, please fix the error and retry...'
+                build 'FREESTYLE-JOB-DEPLOY'
+            }
+       }
+    )
+
+----------
+Script-9: Stage
+----------
+
+stage('Build') {
+    build 'FREESTYLE-JOB-CI'
+}
+
+----------
+Script-10: Multiple Stages running one bye one. (In success case)
+----------
+
+//By default, the stages will run one by one. If the first stage failed, pipeline will not run the second stage.
+
+stage('Build') {
+    build 'FREESTYLE-JOB-CI'
+}
+stage('Deploy') {
+    build 'FREESTYLE-JOB-DEPLOY'
+}
+
+----------
+Script-11: Multiple Stages running one bye one. (In first stage failure case)
+----------
+
+//By default, the stages will run one by one. If the first stage failed, pipeline will not run the second stage.
+
+try{
+	stage('Build') {
+		build 'FREESTYLE-JOB-CI'
+	}catch(error){
+		println 'FREESTYLE-JOB-CI job failed'
+		stage('Deploy'){
+			build 'FREESTYLE-JOB-DEPLOY'
+		}
+	}
+}
+
+----------
+Script-12: Code Checkout
+----------
+node {
+   stage('Checkout') { // for display purposes
+      // Get some code from a GitHub repository
+      git credentialsId: '965f846f-0cfd-47e6-95cb-eddb757327e0', url: 'https://github.com/MainLine-FP9/JarProject.git'
+      }
+}
+----------
+Script-13: Code checkout and build
+----------
+node {
+   stage('Checkout') { // for display purposes
+      // Get some code from a GitHub repository
+      git credentialsId: '965f846f-0cfd-47e6-95cb-eddb757327e0', url: 'https://github.com/MainLine-FP9/JarProject.git'
+      git branch: 'dev_branch', credentialsId: '965f846f-0cfd-47e6-95cb-eddb757327e0', url: 'https://github.com/MainLine-FP9/JarProject.git'
+      }
+   stage('Build') {
+         bat(/"D:\Hari\softwares\apache-maven-3.3.9\bin\mvn" clean package/)
+   }
+}
+----------
+Script-13: Code checkout from particular branch and build
+----------
+node {
+   stage('Checkout') { // for display purposes
+      // Get some code from a GitHub repository
+      git credentialsId: '965f846f-0cfd-47e6-95cb-eddb757327e0', url: 'https://github.com/MainLine-FP9/JarProject.git'
+      git branch: 'dev_branch', credentialsId: '965f846f-0cfd-47e6-95cb-eddb757327e0', url: 'https://github.com/MainLine-FP9/JarProject.git'
+      }
+   stage('Build') {
+         bat(/"D:\Hari\softwares\apache-maven-3.3.9\bin\mvn" clean package/)
+   }
+}
+OR
+node {
+   stage('Checkout') { // for display purposes
+      // Get some code from a GitHub repository from particular branch
+      checkout([$class: 'GitSCM', branches: [[name: '*/dev_branch']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '965f846f-0cfd-47e6-95cb-eddb757327e0', url: 'https://github.com/MainLine-FP9/JarProject.git']]])
+      }
+   stage('Build') {
+         bat(/"D:\Hari\softwares\apache-maven-3.3.9\bin\mvn" clean package/)
+   }
+}
+--------------------------------------------------------------------------------------------------------------
+2. Build Tools: Java: Maven and others Ant, Gradle etc. || .net: NAnt, MS-Build etc.
+--------------------------------------------------------------------------------------------------------------
+
+Maven:-
+-------
+1. What is maven?
+2. How to configure settings.xml file?
+3. How to encrypt password? (settings-security.xml amd settings.xml files).
+4. How to tell maven to use the customised local repo without configuring in settings.xml file? -Dsettings.localRepository=local path.
+5. Mirrors?
+6. Maven life cycle phases?
+7. Compare Maven and Ant?
+8. What is plugin?
+9. Maven dependency traverse? i.e., how maven download a dependency?
+10. How to configure a dependency?
+11. Exclude a dependency?
+12. Resolve dependencies?
+13. Command to update the poms with new versions? i.e., mvn versions:set -DnewVersion=2.0.0-SNAPSHOT -DgenerateBackupPoms=false.
+14. Maven profiles?
+15. Minium Java is required to use Maven.
+16. Maven2.x Vs Maven3.x.
+17. What are the properties?
+18. How to create Maven projects? i.e., maven archetypes.
+19. Maven user level and global lever settings.zml file.
+20. Any plugin configuration?
+21. Dependency scopes? compile, provided, runtime etc.
+22. What is POM?
+23. What are the minium information required in POM file?
+
+--------------------------------------------------------------------------------------------------------------
+
+Gradle:-
+--------
+1. Download gradle-bin, set path. confrim the gradle installtion on machine with "gradle -v"
+2.
+
+--------------------------------------------------------------------------------------------------------------
+3. VC: SVN, GitHub, RTC, TFS etc.
+--------------------------------------------------------------------------------------------------------------
+
+3.1. SVN:- 
+
+Common Commands:-
+-----------------
+add, cleanup, delete (del, remove, rm), info, switch , import, export, checkout, commit, update, revert (two ways), diff, logs, move (two ways), copy and merge.
+
+Need to learn:-
+---------------
+1. svn import <localProject> <SVN_Repo> -m "Commit Message"
+
+	Ex: svn import D:\Hari\jarprojects file:///D:/Hari/svn/branches -m "importing  JArProjects to svn"
+
+2. Create and apply SVN patches.
+	svn diff > mypatchfile.patch
+	svn patch mypatchfile.patch
+   
+3. Checkout empty folder without any code.
+	svn checkout --depth=empty <svn_repo> <destination>
+	
+	ex: svn checkout --depth=empty file:///D:/Hari/svn/branches/Sprint-1 emptyfolder
+
+4. move (two ways)
+	1. Direct move to destination. Source will be deleted.
+	2. Copy move to destination. Source will NOT be deleted. (Go to tortoiseSVN-->RightClick and drag and drop on deswtination folder)
+
+5. Merge: 
+	1. Checkout the destination to your workstation.
+	2. Right click on destination directory.
+	3. Choose "Merge"-->Range of revisions-->Enter Source URL-->Enter the range details "Specific Range"-->Ignore ALL White space-->Test Merge or Merge.
+
+6. Hooks --> pre-commit hook, post-commit hook.
+
+7. How to provide access to SVN users --> in sVN repo -->conf -->authz file. [we can create groups, add user or group to the SVN path]
+
+8. How to add user to svn repo: how to grant access to users? --> conf folder --> passwd file --> add user details under [users] section.
+
+svndump, svnadmin, load, svndumpfilter ?
+
+Interview questions:-
+---------------------
+1. What is SVN?
+2. What is SCM/Release plan?
+3. How to revert?
+4. How to Merge?
+5. How to do reverse Merge?
+6. How to create new folder/file?
+7. Backup?
+8. How to create/configure SVN repo?
+9. Hooks?
+10. What is svndumpfilter?
+11. How to give read/write acces to the user?
+12. Best practice with SVN? --> Do "SVN Update" before start the development. etc.
+13. SVN logs
+14. Resolve conflicts.
+
+3.2. GitHub:- 
+-------------
+
+Common Commands:-
+
+clone, push, fetch, pull, rebase, revert, reset, stash, diff, add, commit, merge, branch.
+
+	1. Create new one
+
+		Create new Organization.
+		Create new forked branch from default branch.
+		Create new orphan branch.
+		Create a new branch/tag from particulat commit-id.
+
+	2. Create new team.
+		Add an user to the team (granting access).
+		Add a repo to the team with read/write/admin access.
+
+	3. Hooks.
+		pre-receive hooks.
+		web-hooks.
+
+	4. Integrations:-
+		Integrate GitHub to Jenkins.
+		Integrate GitHub to JIRA.
+		Integrate Jenkins to JIRA.
+
+	5. bare repo?
+
+Interview questions:-
+---------------------
+1. What is GitHub?
+2. How GitHub famous?
+3. Differences between SVN and GitHub?
+4. Branching strategy?
+5. Command to create/delete/rename a tag?
+6. Command to create/delete/rename a branch?
+7. Once git push is done, how to run Jenkins job automatically without configure Build Periodical or Poll SCM? i.e., post-commit hook script.
+8. Diff between reset, revert, rebasae.
+9. Diff between soft, mixed, hard in reset. Default reset is mixed.
+10. Create a new branch/tag from particulat commit-id?
+11. Rename the tag?
+12. Rename the branch?
+13. How to edit commit messages?
+14. gitk command.
+15. Resolve merge conflicts. Command is "git add .".
+16. Git stage, stash etc.
+17. Move a repository from one organization to another organization.
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------- 
+
+
+
